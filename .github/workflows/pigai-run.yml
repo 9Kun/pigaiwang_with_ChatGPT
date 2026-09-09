@@ -35,30 +35,6 @@ jobs:
       - name: Show browser version
         run: google-chrome --version || chromium --version || true
 
-      - name: Inspect current Pigai login form
-        run: |
-          python - <<'PY'
-          from selenium import webdriver
-          from selenium.webdriver.common.by import By
-          opts = webdriver.ChromeOptions()
-          opts.add_argument('--headless=new')
-          opts.add_argument('--no-sandbox')
-          opts.add_argument('--disable-dev-shm-usage')
-          driver = webdriver.Chrome(options=opts)
-          driver.get('https://www.pigai.org/')
-          print('TITLE:', driver.title)
-          u = driver.find_element(By.ID, 'username')
-          p = driver.find_element(By.ID, 'password')
-          print('USERNAME_PARENT:', (u.find_element(By.XPATH, '..').get_attribute('outerHTML') or '')[:6000])
-          print('PASSWORD_PARENT:', (p.find_element(By.XPATH, '..').get_attribute('outerHTML') or '')[:6000])
-          try:
-              form = p.find_element(By.XPATH, './ancestor::form[1]')
-              print('FORM:', (form.get_attribute('outerHTML') or '')[:20000])
-          except Exception as e:
-              print('NO_FORM:', repr(e))
-          driver.quit()
-          PY
-
       - name: Check credentials
         id: creds
         shell: bash
@@ -67,10 +43,11 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Pigai credentials are not configured as GitHub Actions secrets; skipping real submission."
           fi
 
       - name: Submit and parse Pigai result
-        if: ${{ false }}
+        if: steps.creds.outputs.ready == 'true'
         run: python main.py
 
       - name: Upload result artifacts
