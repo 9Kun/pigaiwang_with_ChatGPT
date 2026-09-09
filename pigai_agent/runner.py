@@ -47,15 +47,26 @@ def run() -> None:
             json.dumps(result, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        (artifacts / "latest_result.html").write_text(
+            pigai.driver.page_source,
+            encoding="utf-8",
+        )
         pigai.screenshot(artifacts / "latest_result.png")
 
         if feedback.score is None:
+            raw = feedback.raw_text
+            if "请勿重复提交" in raw:
+                raise RuntimeError(
+                    "Pigai rejected this round as a duplicate/insufficiently changed submission. "
+                    "Change the essay materially before retrying."
+                )
             raise RuntimeError(
-                "Submission completed, but the score could not be parsed. "
-                "Inspect artifacts/latest_feedback.json and artifacts/latest_result.png."
+                "Submission reached Pigai, but the score could not be parsed. "
+                "Inspect artifacts/latest_feedback.json, latest_result.html and latest_result.png."
             )
 
         print("\n=== Pigai result ===")
         print(json.dumps(result, ensure_ascii=False, indent=2))
         print("\nSaved: artifacts/latest_feedback.json")
+        print("Saved: artifacts/latest_result.html")
         print("Saved: artifacts/latest_result.png")
