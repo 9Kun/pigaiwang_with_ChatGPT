@@ -2,6 +2,9 @@ name: Pigai Run
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "essay.txt"
 
 jobs:
   run-pigai:
