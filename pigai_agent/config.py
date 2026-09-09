@@ -20,10 +20,6 @@ class Settings:
     pigai_account: str
     pigai_password: str
     essay_id: str
-    openai_api_key: str
-    openai_model: str
-    target_score: float
-    max_rounds: int
     headless: bool
 
     @classmethod
@@ -32,19 +28,16 @@ class Settings:
             "PIGAI_ACCOUNT": os.getenv("PIGAI_ACCOUNT", "").strip(),
             "PIGAI_PASSWORD": os.getenv("PIGAI_PASSWORD", "").strip(),
             "PIGAI_ESSAY_ID": os.getenv("PIGAI_ESSAY_ID", "").strip(),
-            "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY", "").strip(),
         }
-        missing = [k for k, v in required.items() if not v]
+        missing = [key for key, value in required.items() if not value]
         if missing:
-            raise RuntimeError("Missing required environment variables: " + ", ".join(missing))
+            raise RuntimeError(
+                "Missing required environment variables: " + ", ".join(missing)
+            )
 
         return cls(
             pigai_account=required["PIGAI_ACCOUNT"],
             pigai_password=required["PIGAI_PASSWORD"],
             essay_id=required["PIGAI_ESSAY_ID"],
-            openai_api_key=required["OPENAI_API_KEY"],
-            openai_model=os.getenv("OPENAI_MODEL", "gpt-5.6").strip() or "gpt-5.6",
-            target_score=float(os.getenv("TARGET_SCORE", "95")),
-            max_rounds=max(1, int(os.getenv("MAX_ROUNDS", "8"))),
             headless=_as_bool("HEADLESS", False),
         )
