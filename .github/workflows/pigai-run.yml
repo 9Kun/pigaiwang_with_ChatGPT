@@ -30,30 +30,51 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt requests
 
-      - name: Show browser version
-        run: google-chrome --version || chromium --version || true
-
-      - name: Check credentials
-        id: creds
-        shell: bash
+      - name: Inspect Pigai login javascript
         run: |
-          if [[ -n "$PIGAI_ACCOUNT" && -n "$PIGAI_PASSWORD" ]]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Pigai credentials are not configured as GitHub Actions secrets; skipping real submission."
-          fi
+          python - <<'PY'
+          import re, requests
+          from urllib.parse import urljoin
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
 
-      - name: Submit and parse Pigai result
-        if: steps.creds.outputs.ready == 'true'
-        run: python main.py
+          opts = webdriver.ChromeOptions()
+          opts.add_argument('--headless=new')
+          opts.add_argument('--no-sandbox')
+          opts.add_argument('--disable-dev-shm-usage')
+          driver = webdriver.Chrome(options=opts)
+          driver.get('https://www.pigai.org/')
+          html = driver.page_source
+          print('TITLE:', driver.title)
+          print('PAGE_ULOGIN_CONTEXT:')
+          pos = html.find('ulogin')
+          print(html[max(0,pos-2500):pos+3500])
+          print('\nSCRIPT_SOURCES:')
+          srcs=[]
+          for s in driver.find_elements(By.TAG_NAME, 'script'):
+              src=s.get_attribute('src')
+              if src:
+                  srcs.append(src)
+                  print(src)
+              else:
+                  txt=s.get_attribute('innerHTML') or ''
+                  if any(k in txt for k in ['ulogin','password_encrypt','lg_from_w']):
+                      print('INLINE_MATCH:', txt[:12000])
+          driver.quit()
 
-      - name: Upload result artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pigai-result
-          path: artifacts/
-          if-no-files-found: ignore
+          print('\nEXTERNAL_SCRIPT_MATCHES:')
+          for src in srcs:
+              try:
+                  r=requests.get(src,timeout=20)
+                  text=r.text
+                  if any(k in text for k in ['ulogin','password_encrypt','lg_from_w']):
+                      print('\n###',src)
+                      for key in ['ulogin','password_encrypt','lg_from_w']:
+                          i=text.find(key)
+                          if i>=0:
+                              print(text[max(0,i-3000):i+6000])
+              except Exception as e:
+                  print('FETCH_FAIL',src,repr(e))
+          PY
