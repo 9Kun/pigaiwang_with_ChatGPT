@@ -2,13 +2,6 @@ name: Pigai Run
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "essay.txt"
-      - "pigai_agent/**"
-      - "main.py"
-      - "requirements.txt"
-      - ".github/workflows/pigai-run.yml"
 
 jobs:
   run-pigai:
