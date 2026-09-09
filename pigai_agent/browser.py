@@ -89,6 +89,7 @@ class PigaiClient:
         clicked = False
         try:
             button = self._first([
+                (By.ID, "ulogin"),
                 (By.CSS_SELECTOR, "#ulogin img"),
                 (By.CSS_SELECTOR, "#ulogin button"),
                 (By.ID, "login"),
@@ -109,8 +110,6 @@ class PigaiClient:
             pass
 
         if not clicked:
-            # Current Pigai page may render the login action without a stable button selector.
-            # Submitting from the password field is the most robust browser-native fallback.
             try:
                 password.send_keys(Keys.ENTER)
             except Exception:
