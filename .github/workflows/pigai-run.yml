@@ -51,6 +51,27 @@ jobs:
           driver.quit()
           PY
 
+      - name: Inspect login controls
+        run: |
+          python - <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          opts = webdriver.ChromeOptions()
+          opts.add_argument('--headless=new')
+          opts.add_argument('--no-sandbox')
+          opts.add_argument('--disable-dev-shm-usage')
+          driver = webdriver.Chrome(options=opts)
+          driver.get('https://www.pigai.org/')
+          for el in driver.find_elements(By.CSS_SELECTOR, 'input, button, img, a, [onclick]'):
+              try:
+                  html = el.get_attribute('outerHTML') or ''
+                  if any(k in html.lower() for k in ['login', 'ulogin', '登录', 'username', 'password']):
+                      print(html[:1200])
+              except Exception:
+                  pass
+          driver.quit()
+          PY
+
       - name: Check credentials
         id: creds
         shell: bash
