@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -86,41 +85,29 @@ class PigaiClient:
         self._clear_and_type(username, self.account)
         self._clear_and_type(password, self.password)
 
-        clicked = False
-        try:
-            button = self._first([
-                (By.ID, "ulogin"),
-                (By.CSS_SELECTOR, "#ulogin img"),
-                (By.CSS_SELECTOR, "#ulogin button"),
-                (By.ID, "login"),
-                (By.ID, "loginBtn"),
-                (By.CSS_SELECTOR, ".login-btn"),
-                (By.CSS_SELECTOR, ".login_button"),
-                (By.CSS_SELECTOR, "button[type='submit']"),
-                (By.CSS_SELECTOR, "input[type='submit']"),
-                (By.CSS_SELECTOR, "input[value*='登录']"),
-                (By.XPATH, "//button[contains(normalize-space(.),'登录')]"),
-                (By.XPATH, "//a[contains(normalize-space(.),'登录')]"),
-                (By.CSS_SELECTOR, "[onclick*='login']"),
-                (By.CSS_SELECTOR, "[onclick*='Login']"),
-            ], clickable=True)
-            self.driver.execute_script("arguments[0].click();", button)
-            clicked = True
-        except TimeoutException:
-            pass
-
-        if not clicked:
-            try:
-                password.send_keys(Keys.ENTER)
-            except Exception:
-                form = password.find_element(By.XPATH, "./ancestor::form[1]")
-                self.driver.execute_script(
-                    "if (arguments[0].requestSubmit) { arguments[0].requestSubmit(); } else { arguments[0].submit(); }",
-                    form,
-                )
-
+        # Pigai's current login JS clears the plaintext password, RSA-encrypts it
+        # into #password_encrypt, then submits #lg_from_w. Reproduce that exact
+        # sequence explicitly so headless execution does not depend on whether
+        # the jQuery click handler has already been attached to the visual span.
+        WebDriverWait(self.driver, 10).until(
+            lambda d: d.execute_script("return typeof encrypt === 'function' && typeof JSEncrypt !== 'undefined';")
+        )
+        encrypted = self.driver.execute_script("return encrypt(arguments[0]);", self.password)
+        if not encrypted:
+            raise RuntimeError("Pigai password encryption returned an empty value.")
+        hidden = self._first([(By.ID, "password_encrypt")])
+        form = self._first([(By.ID, "lg_from_w")])
+        self.driver.execute_script(
+            "arguments[0].value=''; arguments[1].value=arguments[2]; arguments[3].submit();",
+            password,
+            hidden,
+            encrypted,
+            form,
+        )
         time.sleep(2.5)
         self._save_debug("after_login")
+        if "密码错误" in self.driver.title or "账户密码不正确" in self.driver.page_source:
+            raise RuntimeError("Pigai rejected the configured account/password.")
 
     def open_assignment(self, essay_id: str) -> None:
         try:
