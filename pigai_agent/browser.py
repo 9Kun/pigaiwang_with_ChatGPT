@@ -85,26 +85,20 @@ class PigaiClient:
         self._clear_and_type(username, self.account)
         self._clear_and_type(password, self.password)
 
-        # Pigai's current login JS clears the plaintext password, RSA-encrypts it
-        # into #password_encrypt, then submits #lg_from_w. Reproduce that exact
-        # sequence explicitly so headless execution does not depend on whether
-        # the jQuery click handler has already been attached to the visual span.
+        # Use Pigai's own current login() implementation. It RSA-encrypts the
+        # password into #password_encrypt and submits the form through jQuery,
+        # including any submit handlers the site may attach.
         WebDriverWait(self.driver, 10).until(
-            lambda d: d.execute_script("return typeof encrypt === 'function' && typeof JSEncrypt !== 'undefined';")
+            lambda d: d.execute_script(
+                "return typeof login === 'function' && typeof encrypt === 'function' && typeof JSEncrypt !== 'undefined';"
+            )
         )
-        encrypted = self.driver.execute_script("return encrypt(arguments[0]);", self.password)
-        if not encrypted:
-            raise RuntimeError("Pigai password encryption returned an empty value.")
-        hidden = self._first([(By.ID, "password_encrypt")])
-        form = self._first([(By.ID, "lg_from_w")])
-        self.driver.execute_script(
-            "arguments[0].value=''; arguments[1].value=arguments[2]; arguments[3].submit();",
-            password,
-            hidden,
-            encrypted,
-            form,
+        old_url = self.driver.current_url
+        self.driver.execute_script("login();")
+        WebDriverWait(self.driver, 15).until(
+            lambda d: d.current_url != old_url or "密码错误" in d.title or "账户密码不正确" in d.page_source
         )
-        time.sleep(2.5)
+        time.sleep(1.0)
         self._save_debug("after_login")
         if "密码错误" in self.driver.title or "账户密码不正确" in self.driver.page_source:
             raise RuntimeError("Pigai rejected the configured account/password.")
