@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,6 +26,8 @@ class PigaiClient:
             options.add_argument("--headless=new")
         options.add_argument("--disable-notifications")
         options.add_argument("--window-size=1440,1200")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
         self.driver = webdriver.Chrome(options=options)
         self.wait = WebDriverWait(self.driver, 15)
         self.account = account
@@ -57,6 +60,15 @@ class PigaiClient:
         element.clear()
         element.send_keys(text)
 
+    def _save_debug(self, stem: str) -> None:
+        try:
+            debug_dir = Path("artifacts")
+            debug_dir.mkdir(parents=True, exist_ok=True)
+            self.driver.save_screenshot(str(debug_dir / f"{stem}.png"))
+            (debug_dir / f"{stem}.html").write_text(self.driver.page_source, encoding="utf-8")
+        except Exception:
+            pass
+
     def login(self) -> None:
         self.driver.get(self.HOME)
         username = self._first([
@@ -73,23 +85,55 @@ class PigaiClient:
         ])
         self._clear_and_type(username, self.account)
         self._clear_and_type(password, self.password)
-        button = self._first([
-            (By.CSS_SELECTOR, "#ulogin img"),
-            (By.CSS_SELECTOR, "#ulogin button"),
-            (By.CSS_SELECTOR, "button[type='submit']"),
-            (By.XPATH, "//button[contains(.,'登录')]"),
-            (By.XPATH, "//input[@type='submit']"),
-        ], clickable=True)
-        self.driver.execute_script("arguments[0].click();", button)
-        time.sleep(1.2)
+
+        clicked = False
+        try:
+            button = self._first([
+                (By.CSS_SELECTOR, "#ulogin img"),
+                (By.CSS_SELECTOR, "#ulogin button"),
+                (By.ID, "login"),
+                (By.ID, "loginBtn"),
+                (By.CSS_SELECTOR, ".login-btn"),
+                (By.CSS_SELECTOR, ".login_button"),
+                (By.CSS_SELECTOR, "button[type='submit']"),
+                (By.CSS_SELECTOR, "input[type='submit']"),
+                (By.CSS_SELECTOR, "input[value*='登录']"),
+                (By.XPATH, "//button[contains(normalize-space(.),'登录')]"),
+                (By.XPATH, "//a[contains(normalize-space(.),'登录')]"),
+                (By.CSS_SELECTOR, "[onclick*='login']"),
+                (By.CSS_SELECTOR, "[onclick*='Login']"),
+            ], clickable=True)
+            self.driver.execute_script("arguments[0].click();", button)
+            clicked = True
+        except TimeoutException:
+            pass
+
+        if not clicked:
+            # Current Pigai page may render the login action without a stable button selector.
+            # Submitting from the password field is the most robust browser-native fallback.
+            try:
+                password.send_keys(Keys.ENTER)
+            except Exception:
+                form = password.find_element(By.XPATH, "./ancestor::form[1]")
+                self.driver.execute_script(
+                    "if (arguments[0].requestSubmit) { arguments[0].requestSubmit(); } else { arguments[0].submit(); }",
+                    form,
+                )
+
+        time.sleep(2.5)
+        self._save_debug("after_login")
 
     def open_assignment(self, essay_id: str) -> None:
-        search = self._first([
-            (By.CSS_SELECTOR, "input[name='rid']"),
-            (By.CSS_SELECTOR, "input[name*='request']"),
-            (By.CSS_SELECTOR, "input[placeholder*='作文号']"),
-            (By.XPATH, "/html/body/div[4]/div[3]/form/div[2]/input[1]"),
-        ])
+        try:
+            search = self._first([
+                (By.CSS_SELECTOR, "input[name='rid']"),
+                (By.CSS_SELECTOR, "input[name*='request']"),
+                (By.CSS_SELECTOR, "input[placeholder*='作文号']"),
+                (By.XPATH, "/html/body/div[4]/div[3]/form/div[2]/input[1]"),
+            ])
+        except Exception:
+            self._save_debug("assignment_search_failure")
+            raise
         self._clear_and_type(search, essay_id)
         submit = self._first([
             (By.XPATH, "//button[contains(.,'进入') or contains(.,'搜索') or contains(.,'查找')]"),
