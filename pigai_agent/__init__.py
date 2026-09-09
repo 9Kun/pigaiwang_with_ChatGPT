@@ -1,1 +1,1 @@
-"""Pigai + OpenAI iterative essay improvement toolkit."""
+"""Pigai grading automation toolkit with external essay iteration."""
