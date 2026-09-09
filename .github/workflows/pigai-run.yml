@@ -1,0 +1,75 @@
+name: Pigai Run
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "essay.txt"
+      - "pigai_agent/**"
+      - "main.py"
+      - "requirements.txt"
+      - ".github/workflows/pigai-run.yml"
+
+jobs:
+  run-pigai:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PIGAI_ACCOUNT: ${{ secrets.PIGAI_ACCOUNT }}
+      PIGAI_PASSWORD: ${{ secrets.PIGAI_PASSWORD }}
+      PIGAI_ESSAY_ID: "3431395"
+      HEADLESS: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Show browser version
+        run: |
+          google-chrome --version || chromium --version || true
+
+      - name: Smoke test Pigai homepage
+        run: |
+          python - <<'PY'
+          from selenium import webdriver
+          opts = webdriver.ChromeOptions()
+          opts.add_argument('--headless=new')
+          opts.add_argument('--no-sandbox')
+          opts.add_argument('--disable-dev-shm-usage')
+          driver = webdriver.Chrome(options=opts)
+          driver.get('https://www.pigai.org/')
+          print('TITLE:', driver.title)
+          print('URL:', driver.current_url)
+          driver.quit()
+          PY
+
+      - name: Check credentials
+        id: creds
+        shell: bash
+        run: |
+          if [[ -n "$PIGAI_ACCOUNT" && -n "$PIGAI_PASSWORD" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Pigai credentials are not configured as GitHub Actions secrets; skipping real submission."
+          fi
+
+      - name: Submit and parse Pigai result
+        if: steps.creds.outputs.ready == 'true'
+        run: python main.py
+
+      - name: Upload result artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pigai-result
+          path: artifacts/
+          if-no-files-found: ignore
