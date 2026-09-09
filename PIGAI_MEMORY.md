@@ -1,112 +1,143 @@
 # Pigai High-Score Memory
 
-> Purpose: persistent experiment memory for any Agent that iterates `essay.txt`. Read this file before changing the essay. Preserve validated gains, change one main variable per round, and use real Pigai feedback rather than intuition.
+> Persistent experiment memory for any Agent that iterates `essay.txt`. **Read this file before editing the essay.** Preserve validated gains, change one main variable per round, and trust real Pigai A/B results over intuition.
 
 ## Current best checkpoint
 
-- Best verified score: **92.0**
-- Best role/topic: **grandmother**, with a direct personal interaction and direct influence on the writer.
-- Best checkpoint commit before further experiments: `5b895abb7cccddc564ac01490cc8cdf8677d8446`
-- Best visible metrics from the result page:
-  - vocabulary: **0.9708473**
-  - sentence: **0.89433975**
-  - structure: **0.89375404**
-  - content relevance/cohesion: **0.7663632**
-- Pigai counted **182 words** on the 92.0 version. The assignment says 120–180, so future candidates should normally stay at **175–179 words** even though the 182-word test still received 92.
-- 92.0 report: no fragments, no bad sentences; Pigai praised transitions, vocabulary/spelling, and complex syntax.
+- Best verified score: **92.5**
+- Best role/topic: **grandmother**, with direct personal interaction and direct influence on the writer.
+- Best verified 92.5 commit: `9406b92c64b3cba0242f83969bfb0f2820303aae` (Run 40).
+- Pigai word count: **179**, safely within the task limit of 120–180.
+- Hidden dimensions for the preferred 92.5 baseline:
+  - vocabulary: **0.9747575**
+  - sentence: **0.9026788**
+  - structure: **0.89570724**
+  - content relevance/cohesion: **0.7662771**
+- Report: no fragments or bad sentences; Pigai praised transitions/cohesion, vocabulary/spelling and complex syntax.
+
+### Preferred 92.5 baseline text
+
+```text
+The person I hold in the highest regard is my grandmother, whose character, marked by selflessness, perseverance and responsibility, has left an indelible impression on me. What I admire most is the patience and responsibility with which she supports our family whenever difficulties arise.
+
+I still remember when I performed poorly at school and wanted to give up. Instead of criticizing me, she spared no effort to encourage me and helped me regain confidence. She taught me to view difficulties as stepping stones to progress. More importantly, she taught me that perseverance matters most when circumstances are unfavorable, and that strength is shown through patience and responsibility.
+
+Her example of perseverance and responsibility has exerted a profound influence on me far beyond that experience. Whenever I encounter setbacks, I follow her example, maintain my composure and continue moving forward rather than avoiding problems. Because of her, I have become more resilient, responsible and considerate. To me, she is not only the person I respect most, but also someone I will look up to and a constant source of strength.
+```
 
 ## Verified expressions — preserve by default
 
-### Explicitly recognized by Pigai
+### Explicitly recognized by this Pigai task
 
-1. **`far beyond`** — Pigai explicitly labeled it **闪光短语**.
-2. **`spare no effort to`** — Pigai explicitly labeled it **精彩句型**.
-3. **`not only ... but also ...`** — Pigai's own public quick-experience rule list labels this pattern **闪光短语**. It is also natural in the current conclusion.
+1. **`far beyond`** — explicitly labeled **闪光短语** by Pigai.
+2. **`spare no effort to`** — explicitly labeled **精彩句型** by Pigai.
 
-### Strong expressions that helped or survived high-score versions
+### Controlled A/B gains
+
+- **`maintain my composure`** — replacing `keep my composure` on the legal 92.0 baseline raised the real score to **92.5**. This is a verified positive phrase and should be preserved.
+- **`exert a profound influence on ...`** — upgrading plain `influence` previously helped move the best score from 91.5 to **92.0**.
+
+### Strong expressions that survive the best version
 
 - `hold ... in the highest regard`
 - `leave an indelible impression on ...`
-- `exert a profound influence on ...` — replacing plain `influence` helped move the best score from 91.5 to **92.0**.
 - `view difficulties as stepping stones to progress`
-- `keep my composure`
 - `regain confidence`
 - `a constant source of strength`
 - `look up to`
-- `with which ...` relative-clause structure
+- `with which ...`
 - `whenever difficulties arise`
+- `not only ... but also ...`
 
-Do **not** insert all of these mechanically. Preserve the ones already contributing to a coherent sentence.
+Do **not** insert phrases mechanically. A phrase is useful only when it preserves the person -> event -> reason -> influence semantic chain.
 
-## Tested ideas that did NOT improve the score
+## Web / official Pigai findings
 
-- `through thick and thin`: score fell from 91.0 to 90.5 and Pigai did not recognize it as an extra highlight.
-- `in the face of difficulties`: remained 91.0; no extra reward.
-- Mechanical repetition of `perseverance` / `responsibility`: 91.5 fell to 90.5; vocabulary, sentence and relevance all declined.
-- Public figure topic (Yuan Longping): about 88.5. For this prompt, people with **direct personal interaction** performed better.
-- Merely piling up rarer words is not the current bottleneck.
+1. Pigai publicly describes scoring as measuring the distance between an essay and corpora and mapping extracted writing indicators to a score.
+2. Pigai's public quick-experience page shows that scoring rules/formulas can be configured for a task. It lists examples such as `change the way`, `give up`, `not only...but also...`, `come up with`, etc. as preset flash phrases.
+3. **Important task-specific lesson:** a public preset is not guaranteed to be active in this exact assignment. We tested `change the way` on the 92.5 baseline; the page still showed only one flash phrase and the score fell to 92.0. Therefore only this assignment's real A/B results count as validated.
+4. Published analyses of Pigai report stronger sensitivity to advanced vocabulary, grammatical complexity and overt cohesion than to deep content/organization. Our own experiments agree: vocabulary is already very high, while relevance remains the hardest dimension to raise.
 
-## Topic/person experiments
+## Experiment log
 
-- high-school teacher: about 88.5 in earlier versions.
-- father: reached about 90.5.
-- mother: reached 91.0.
-- grandmother: reached **92.0**, currently best.
-- Yuan Longping/public figure: about 88.5.
+### Topic/person experiments
 
-Working inference: for `The Most Respectable Person in My Mind`, Pigai rewards a tight chain of **person -> concrete personal event -> reason for respect -> direct influence on me** more than detached public achievements.
+- high-school teacher: about **88.5**
+- father: about **90.5**
+- mother: **91.0**
+- grandmother: **92.5**, current best
+- Yuan Longping/public figure: about **88.5**
 
-## What the web/official material suggests
+Working inference: for this prompt, a person with **direct personal interaction and direct influence on me** performs better than a detached public figure.
 
-1. Pigai describes its engine as comparing writing with corpora and mapping many extracted writing indicators to scores. Its public materials expose dimensions such as vocabulary, sentence, structure and content relevance.
-2. Pigai's official quick-experience page says scoring is based on distance from corpora and shows preset rules such as `not only...but also...`, `give up`, `come up with`, etc. as flash phrases.
-3. Research discussing Pigai reports that the system is especially sensitive to advanced vocabulary, grammatical correctness/complexity and overt cohesion devices, while deeper organization/content evaluation is less reliable. Therefore optimize for measurable quality **without sacrificing semantic coherence**.
-4. A published case study of repeated Pigai revision found larger gains in vocabulary/sentence dimensions than in structure/content, which matches our own experiments: relevance is harder to raise and must be improved by coherent topic chains rather than word stuffing.
+### Phrase / structure experiments
 
-## Important data from the 92.0 report
+- `through thick and thin`: **91.0 -> 90.5**, not recognized; reject.
+- `in the face of difficulties`: stayed **91.0**; no gain.
+- mechanical repetition of `perseverance` / `responsibility`: **91.5 -> 90.5**; reject.
+- stronger lexical cohesion/semantic bridge: helped relevance rise substantially and produced **91.5**.
+- `has exerted a profound influence on me`: **91.5 -> 92.0**; preserve.
+- 182-word 92.0 version: high score but outside stated limit; do not use as final.
+- 11-sentence / short sentence experiment (`Her actions speak louder than words.`): **92.0 -> 89.5**; reject. Do not game diagnostic reference ranges mechanically.
+- first 179-word trim that weakened several phrases: **92.0 -> 91.5**; reject.
+- controlled 179-word trim (`I still remember when...`; `she taught me...`): retained **92.0**; legal baseline.
+- `true strength lies in`: **92.0 -> 91.5**; reject.
+- `keep my composure` -> **`maintain my composure`**: **92.0 -> 92.5**; verified gain.
+- `Because of her, I have changed the way I face challenges.`: **92.5 -> 92.0**; reject for this task despite public quick-experience examples.
+- `I still remember ... wanted to give up` -> `I remember ... was tempted to give up`: stayed **92.5**. Hidden dimensions changed to vocab **0.9761274**, sentence **0.9014356**, structure **0.90017426**, relevance **0.7624047**. Because relevance is the main bottleneck and fell slightly, prefer the Run 40 wording.
 
-Pigai's diagnostic reference ranges vs current values:
+## Current diagnostic interpretation
 
-- sentence count: current **10**, reference **11–17** -> likely improvement opportunity.
-- average sentence length: current **20**, reference **13–20** -> at upper edge.
-- 1–9 word sentences: current **0%**, reference **5–32%** -> one short, meaningful sentence may help.
-- adjectives: current **11%**, reference **15–20%** -> modest room to increase natural descriptive adjectives.
-- academic vocabulary: current **15%**, reference **2–7%** -> already very high; do not keep adding academic words blindly.
-- out-of-level vocabulary: current **11%**, reference **3–8%** -> already above reference; excessive rare vocabulary can be counterproductive.
-- paragraphs: 3, appropriate.
-- errors/fragments: 0, preserve this.
+Preferred 92.5 baseline (Run 40):
+
+- vocabulary **97.48%** — already extremely high; do not chase rare words blindly.
+- sentence **90.27%** — strong but still has room for natural collocation upgrades.
+- structure **89.57%** — strong; preserve the current three-paragraph architecture.
+- content relevance **76.63%** — lowest dimension and hardest bottleneck.
+
+Visible report characteristics:
+
+- word count: **179**
+- sentence count: **10**; reference page says 11–17, but forcing 11 sentences caused a large regression.
+- average sentence length: **20**, upper edge of reference range.
+- fragments: **0**
+- bad sentences: **0**
+- academic vocabulary and out-of-level vocabulary are already above reference ranges, so additional obscure words can hurt rather than help.
 
 ## Iteration protocol for Agents
 
 1. Read this memory before editing `essay.txt`.
-2. Treat **92.0** as the current benchmark.
+2. Treat **92.5 / Run 40** as the benchmark until a real Pigai run beats it.
 3. Change **one main variable** per experiment whenever possible.
-4. After each run, record score + dimensions + newly recognized highlights + warnings.
-5. If score falls, restore the best semantic skeleton; do not stack changes from a losing version.
-6. Prioritize the weakest dimensions while protecting vocabulary and grammar.
-7. Avoid exceeding 180 words; target **175–179**.
-8. Keep exactly three clear semantic stages:
-   - paragraph 1: identify the most respectable person and main qualities;
-   - paragraph 2: concrete event proving why I respect her;
-   - paragraph 3: explicit, personal influence on my behavior/attitude.
-9. Use the exact task semantics naturally: `the person I respect most`, `what I admire`, `because of her`, `influence on me`.
-10. Prefer lexical chains with variation, not repetition: e.g. `difficulty -> setback -> challenge`, `perseverance -> resilient -> keep moving forward`.
+4. After each run, record score, hidden dimensions when available, newly recognized highlights, and any warnings/errors.
+5. If score falls, restore the preferred baseline; never stack changes from a losing version.
+6. Keep the essay at **175–179 words**; never knowingly exceed 180 for the final candidate.
+7. Preserve the three-stage semantic architecture:
+   - P1: identify the person and qualities;
+   - P2: concrete personal event proving why I respect her;
+   - P3: explicit direct influence on my attitudes/behavior.
+8. Preserve exact task semantics naturally: `the person I respect most`, `What I admire most`, `Because of her`, `influence on me`.
+9. Prefer semantic variation over repeated keywords: `difficulty -> setback`, `perseverance -> resilient -> continue moving forward`.
+10. Do not optimize a diagnostic reference range in isolation. The 11-sentence experiment proved that local metric matching can reduce the actual score.
 
 ## Next hypotheses worth testing
 
-Priority A — improve sentence/structure without weakening relevance:
-- Convert the current 10-sentence essay to **11 sentences**.
-- Add one short but meaningful sentence (roughly 5–9 words), not a generic proverb unless it supports the story.
-- Keep average sentence length below 20.
+Priority A — natural collocation micro-upgrades on the 92.5 baseline:
 
-Priority B — keep content relevance high:
-- Make each paragraph explicitly point to the same personal qualities and event, but use semantic variation instead of repeated nouns.
-- Keep the grandmother/personal-event topic until another person demonstrably beats 92.
+- `helped me regain confidence` -> `helped restore my confidence` (same approximate length; stronger collocation candidate).
+- `Because of her` -> `Thanks to her` (same three-word causal bridge; positive relation, but must be A/B tested).
+- other upgrades should change only one phrase and preserve all verified expressions.
 
-Priority C — phrase experiments:
-- Preserve `far beyond`, `spare no effort to`, `not only...but also...`, and `exert a profound influence on` unless a controlled test shows regression.
-- Candidate phrases should be natural and topic-linked; one new phrase per test is preferable.
+Priority B — relevance:
+
+- improve direct personal influence without removing `resilient, responsible and considerate`, which performed better than the `change the way` replacement.
+- keep the grandmother + personal failure/support story unless another topic beats **92.5** in a real run.
+
+Priority C — flash phrases:
+
+- preserve task-verified `far beyond` and `spare no effort to`.
+- public Pigai flash-phrase lists are candidate generators only, not proof of reward in this task.
 
 ## Stop condition
 
-Target score: **95.0+**. Do not claim success until a real Pigai run reports at least 95.0.
+Target score: **95.0+**. Do not claim success until a real Pigai run reports at least **95.0**.
