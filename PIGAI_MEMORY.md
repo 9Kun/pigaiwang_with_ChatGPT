@@ -5,7 +5,7 @@
 ## Current objective
 
 - Target: **verified Pigai score >= 95.0**.
-- Do not claim success until `LATEST_PIGAI_FEEDBACK.json` reports `score >= 95.0` from a real submission.
+- Do not claim success until a real submission reports `score >= 95.0`.
 - Current best verified headline score: **94.0**, rank 1.
 - Best role/topic: **grandmother**, direct personal interaction and long-term influence.
 
@@ -15,7 +15,7 @@ Source essay commit: `88c328e6629c9f0496883bd9ae63454f0d070ba3`.
 Result commit: `4389516e07d2f57efdebf509e8c2f76c0df43b18`.
 Pigai score: **94.0**; Pigai word count: **180**.
 Hidden dimensions: vocabulary **96.7183**, sentence **93.4581**, structure **90.5777**, relevance **91.2899**.
-This remains the best balanced checkpoint after Runs 119–126.
+This remains the best balanced checkpoint after Runs 119–127.
 
 ### Run 118 text
 
@@ -39,35 +39,22 @@ Beyond that experience, her example of perseverance and responsibility has deepl
 - `a constant source of strength`
 - `not only ... but also ...`
 - `Above all,`
-- `To illustrate this,` — improved sentence/structure over `For instance` in the newer 94-point line.
-- `More significantly,` — slightly improved hidden metrics over `More importantly` in the newer 94-point line.
+- `To illustrate this,`
+- `More significantly,`
 - `Therefore,`
 - semantic chain: **patience -> perseverance -> responsibility -> changed behavior / stronger self**.
 
-Older validated phrase: `far beyond` was explicitly recognized by Pigai as a highlight, but inserting it into the newer 94-point checkpoint has not produced a headline gain. Treat it as optional, not mandatory.
-
 ## Important recent experiments
 
-- Run 119: changed third-paragraph `patience and perseverance` to `patience and responsibility`; **92.5**. Relevance collapsed to **72.2948**. Reject; preserve `patience and perseverance` in that sentence.
-- Run 120: old Run-54 line with `Through that experience`; **93.0**, 181 Pigai words. Reject; stale branch, not a valid replacement for the 94-point checkpoint.
-- Run 121: `Beyond this experience` instead of `Beyond that experience`; **94.0**, hidden dimensions effectively identical to Run 118. Neutral; no reason to promote.
+- Run 119: changed third-paragraph `patience and perseverance` to `patience and responsibility`; **92.5**. Relevance collapsed to **72.2948**. Reject.
+- Run 120: old Run-54 line with `Through that experience`; **93.0**, 181 Pigai words. Reject.
+- Run 121: `Beyond this experience` instead of `Beyond that experience`; **94.0**, hidden dimensions effectively identical to Run 118. Neutral.
 - Run 122: conclusion changed to `Taken together, these qualities ...`; **94.0**. Vocabulary/sentence rose, structure fell to **89.6855**. Reject as baseline.
-- Run 123: same Run-118 content but conclusion isolated as paragraph 4; **94.0**. Structure fell to **90.2868**. Keep 3 paragraphs.
-- Run 124: concrete exam evidence split into `I vividly remember a disappointing exam result. I nearly gave up.`; **93.0**. Structure rose to **91.1025**, but sentence score collapsed to **89.3552**. Do not force short sentences just to satisfy diagnostic ranges.
-- Run 125: recombined as `a disappointing exam result that nearly made me give up`; **94.0**. Structure rose to **90.7620**, but relevance fell to **91.0152**; interesting but weaker overall than Run 118.
-- Run 126: changed to `a disappointing exam result that nearly made me lose confidence`; **94.0**. Structure **90.8523**, relevance fell further to **90.2150**. Reject.
-
-## Earlier major findings
-
-- Person/topic results: teacher about **88.5**, father about **90.5**, mother **91.0**, grandmother currently best at **94.0**; detached public-figure variants performed worse.
-- Mechanical repetition of `perseverance` / `responsibility` can reduce relevance.
-- `maintain my composure` outperformed `keep my composure` in earlier controlled testing.
-- `exert a profound influence on ...` helped an older line, but the newer Run-118 wording `has deeply influenced the way I address difficulties` participates in the higher 94-point checkpoint; do not revert merely because the phrase sounds more advanced.
-- `supports me whenever I face difficulties` was worse than `supports our family whenever difficulties arise` in the newer line.
-- `In fact`, `As a result`, and several connector substitutions reduced the headline score or hidden structure.
-- Four paragraphs did not help; three paragraphs are preferred.
-- Adding a deliberately short sentence to satisfy the diagnostic reference range damaged the sentence dimension.
-- Do not chase adjective share, sentence count, clause count, or rare-word percentage mechanically.
+- Run 123: conclusion isolated as paragraph 4; **94.0**. Structure fell to **90.2868**. Keep 3 paragraphs.
+- Run 124: concrete exam evidence split into two short sentences; **93.0**. Structure rose to **91.1025**, but sentence score collapsed to **89.3552**. Reject.
+- Run 125: recombined as `a disappointing exam result that nearly made me give up`; **94.0**. Structure **90.7620**, relevance **91.0152**. Weaker balance than Run 118.
+- Run 126: `a disappointing exam result that nearly made me lose confidence`; **94.0**. Structure **90.8523**, relevance **90.2150**. Reject.
+- **Run 127 / `d266338f925d5cce59175e26678bfaf19c0788d9`**: restored Run-118 wording and changed only `Therefore, I have grown stronger, more responsible and considerate.` to `Her example has made me resilient, responsible and considerate.`; **94.0**, **180 words**, rank **1/65**. Hidden dimensions: vocabulary **96.9980**, sentence **93.3510**, structure **89.3674**, relevance **90.7761**. Vocabulary rose slightly, but sentence, structure, and relevance all fell versus Run 118. **Reject; do not promote.** The Pigai submission and artifact generation succeeded, but the workflow's persistence step failed afterward, so use the Run-127 artifact as the authoritative result for this run.
 
 ## Diagnostic priority
 
@@ -77,13 +64,13 @@ On Run 118 the dimensions are roughly:
 3. relevance 91.29 — needs improvement but is sensitive to mechanical repetition.
 4. structure 90.58 — weakest; improve genuine logical cohesion rather than merely adding connectors.
 
-Promising direction from Runs 124–126: making the school setback more concrete can raise structure above 90.7–91.1, but current exam wording reduces relevance or sentence quality. Search for a formulation that preserves Run-118 relevance while retaining the clearer evidence structure.
+Runs 124–127 reinforce that seemingly more explicit phrasing can improve one local metric while damaging the balanced profile. Do not replace `Therefore, I have grown stronger, more responsible and considerate.` with a direct `Her example has made me ...` construction.
 
 ## Infrastructure
 
 - `.github/workflows/pigai-run.yml` triggers only when `essay.txt` changes (or manual dispatch).
-- Successful runs persist the real result to `LATEST_PIGAI_FEEDBACK.json`.
-- Result artifacts include full feedback and screenshot.
+- Successful grading creates an artifact containing `latest_feedback.json`, `latest_result.html`, `latest_result.png`, and `latest_essay.txt`.
+- `LATEST_PIGAI_FEEDBACK.json` is convenient but is not authoritative if the post-grading persistence step fails; in that case inspect the artifact directly.
 - Documentation-only changes do not trigger a Pigai submission.
 
 ## Iteration rule
