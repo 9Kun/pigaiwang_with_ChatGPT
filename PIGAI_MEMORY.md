@@ -97,6 +97,13 @@ Working inference: for this prompt, a person with direct personal interaction pe
 - add `Ultimately` before conclusion: stayed **92.5**, hidden dims improved to vocab 0.9762782 / sentence 0.90292885 / structure 0.8982254 / relevance 0.8174569.
 - add `For instance` before the personal anecdote: **92.5 -> 93.0**. Hidden dims: vocab **0.9762753**, sentence **0.9082242**, structure **0.9028283**, relevance **0.81538284**. This is the current best real score.
 
+### Runs 69–71 (2026-09-10 continuation)
+
+- **Run 69 / commit `f4ad8f7722e505947a42fcdcdf7e2cbd8bcb8fc6`** — concise direct-influence variant (`supports me whenever I face difficulties`, concise P2/P3 wording): **93.0**, 175 words. Equal score only; did not beat the verified Run 54 checkpoint, so it is not promoted to baseline.
+- **Run 70 / commit `f20253d92363553bf6f49ff1301fa1c534559a92`** — from the verified Run 54 wording, changed present-behavior clause from `continue moving forward rather than avoiding problems` to `face problems with patience and determination`: **93.0**, 179 words. Equal score; useful evidence that an explicit patience link is tolerated, but no promotion.
+- **Run 71 / commit `f04b13c4d82e8f15e59876c3815028df07fbf55e`** — changed opening quality triad to adjective forms (`patient, persevering and responsible`) to test the low adjective diagnostic: **91.5**, 178 words. **Reject.** Adjective share rose to 12%, but real score fell 1.5 points; confirms not to optimize diagnostic POS ranges mechanically.
+- After Run 71, `essay.txt` was restored to the preferred verified **93.0 Run 54 baseline** in commit `55467941c1cac11aa56a42dcfbb37106d651e134`.
+
 ## Current diagnostic interpretation
 
 Run 54 / 93.0:
@@ -108,6 +115,8 @@ Run 54 / 93.0:
 - word count **180** — hard ceiling; new additions require cuts/replacements.
 - sentence count **10**; reference says 11–17, but forcing 11 caused a major regression.
 - fragments **0**, bad sentences **0**.
+
+Recent visible diagnostics reinforce that mechanical range matching is unsafe: Run 71 raised adjective share from about 10% to 12% yet fell to 91.5.
 
 ## Iteration protocol for Agents
 
@@ -124,16 +133,18 @@ Run 54 / 93.0:
 8. Preserve the high-relevance semantic chain: **patience -> perseverance -> responsibility -> resilient/considerate behavior**.
 9. Prefer semantic variation over mechanical repetition.
 10. Do not optimize a diagnostic reference range in isolation.
+11. `LATEST_PIGAI_FEEDBACK.json` is now persisted by the Actions workflow after successful grading so later Agents can read the latest real result without unpacking artifacts.
 
 ## Next hypotheses worth testing
 
 Priority A — increase relevance without destroying Run 54 structure:
-- test a more personal but natural variant of `supports our family` only if it preserves the patience quality chain; previous `guides me` failed, so use caution.
-- test micro-edits in P3 that connect grandmother's qualities to present behavior without repeating exact keywords.
+- test micro-edits in P3 that connect grandmother's qualities to present behavior without repeating exact keywords; Run 70 showed `with patience and determination` is score-neutral, not a gain.
+- direct-support wording can retain 93.0 (Run 69), but has not beaten the family-support baseline.
 
 Priority B — structure/sentence micro-gains while staying <=180:
 - preserve `For instance`, `Consequently`, `Ultimately` unless a controlled A/B beats them.
 - candidate transition replacements should not add words unless a compensating cut is made.
+- do not chase adjective/sentence-count reference ranges mechanically; controlled tests have lost points.
 
 Priority C — task-verified high-value phrases:
 - preserve `far beyond`, `spare no effort to`, `maintain my composure`, and `exert a profound influence on`.
