@@ -6,6 +6,9 @@ on:
     paths:
       - "essay.txt"
 
+permissions:
+  contents: write
+
 jobs:
   run-pigai:
     runs-on: ubuntu-latest
@@ -41,6 +44,19 @@ jobs:
       - name: Submit and parse Pigai result
         if: steps.creds.outputs.ready == 'true'
         run: python main.py
+
+      - name: Persist latest feedback
+        if: steps.creds.outputs.ready == 'true' && success()
+        shell: bash
+        run: |
+          cp artifacts/latest_feedback.json LATEST_PIGAI_FEEDBACK.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add LATEST_PIGAI_FEEDBACK.json
+          if ! git diff --cached --quiet; then
+            git commit -m "results: persist latest Pigai feedback"
+            git push
+          fi
 
       - name: Upload result artifacts
         if: always()
