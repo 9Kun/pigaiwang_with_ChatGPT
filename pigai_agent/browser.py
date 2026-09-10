@@ -78,17 +78,17 @@ class PigaiClient:
             try:
                 self.driver.get(self.HOME)
                 return
-            except Exception as exc:
+            except TimeoutException as exc:
                 last = exc
-                self._save_debug(f"home_load_failure_{attempt}")
+                self._save_debug(f"home_load_timeout_{attempt}")
                 try:
                     self.driver.execute_script("window.stop();")
                 except Exception:
                     pass
                 if attempt < attempts:
                     time.sleep(float(attempt * 2))
-        assert last is not None
-        raise last
+        if last is not None:
+            raise last
 
     def login(self) -> None:
         self._open_home_with_retry()
@@ -137,156 +137,194 @@ class PigaiClient:
         submit = self._first([
             (By.XPATH, "//button[contains(.,'进入') or contains(.,'搜索') or contains(.,'查找')]"),
             (By.XPATH, "/html/body/div[4]/div[3]/form/div[3]/button"),
+            (By.CSS_SELECTOR, "form button[type='submit']"),
         ], clickable=True)
-        submit.click()
-        WebDriverWait(self.driver, 15).until(lambda d: essay_id in d.page_source or "作文" in d.title)
-        time.sleep(1.0)
+        self.driver.execute_script("arguments[0].click();", submit)
+        time.sleep(1.5)
 
-    def _essay_editor(self) -> WebElement:
-        return self._first([
-            (By.CSS_SELECTOR, "textarea"),
-            (By.CSS_SELECTOR, "[contenteditable='true']"),
+    def assignment_info(self) -> tuple[str, str]:
+        title = ""
+        requirements = ""
+        try:
+            node = self._first([
+                (By.ID, "request_y"),
+                (By.CSS_SELECTOR, "[id*='request']"),
+            ])
+            requirements = BeautifulSoup(node.get_attribute("innerHTML") or node.text, "html.parser").get_text(" ", strip=True)
+        except Exception:
+            pass
+
+        soup = BeautifulSoup(self.driver.page_source, "html.parser")
+        for selector in ["h1", "h2", ".title", "#title"]:
+            node = soup.select_one(selector)
+            if node and node.get_text(strip=True):
+                title = node.get_text(" ", strip=True)
+                break
+        if not title:
+            title = "English Essay"
+        return title, requirements
+
+    def current_essay(self) -> str:
+        editor = self._first([
             (By.ID, "contents"),
             (By.NAME, "contents"),
+            (By.CSS_SELECTOR, "textarea"),
+            (By.CSS_SELECTOR, "[contenteditable='true']"),
         ])
+        value = editor.get_attribute("value")
+        return (value if value is not None else editor.text).strip()
 
-    def submit_essay(self, essay_text: str) -> None:
-        editor = self._essay_editor()
-        if editor.tag_name.lower() == "textarea":
-            self._clear_and_type(editor, essay_text)
+    def submit_essay(self, essay: str) -> None:
+        editor = self._first([
+            (By.ID, "contents"),
+            (By.NAME, "contents"),
+            (By.CSS_SELECTOR, "textarea"),
+            (By.CSS_SELECTOR, "[contenteditable='true']"),
+        ])
+        if editor.get_attribute("contenteditable") == "true":
+            self.driver.execute_script("arguments[0].innerText = arguments[1];", editor, essay)
         else:
-            self.driver.execute_script(
-                "arguments[0].innerHTML = ''; arguments[0].innerText = arguments[1]; arguments[0].dispatchEvent(new Event('input', {bubbles:true}));",
-                editor,
-                essay_text,
-            )
+            self._clear_and_type(editor, essay)
 
-        submit = self._first([
-            (By.XPATH, "//button[contains(.,'提交') or contains(.,'保存')]"),
-            (By.XPATH, "//input[@type='submit']"),
+        button = self._first([
+            (By.ID, "dafen"),
+            (By.XPATH, "//button[contains(.,'提交') or contains(.,'批改') or contains(.,'评分')]"),
+            (By.CSS_SELECTOR, "button[type='submit']"),
         ], clickable=True)
         old_url = self.driver.current_url
-        submit.click()
-        WebDriverWait(self.driver, 20).until(
-            lambda d: d.current_url != old_url or "得分" in d.page_source or "分" in d.title
-        )
+        self.driver.execute_script("arguments[0].click();", button)
+
+        def finished(d: webdriver.Chrome) -> bool:
+            page = d.page_source
+            return (
+                d.current_url != old_url
+                or "作文评分" in page
+                or "按句点评" in page
+                or "继续完善" in page
+                or "请勿重复提交" in page
+                or "字数超过" in page
+            )
+
+        try:
+            WebDriverWait(self.driver, 20).until(finished)
+        except TimeoutException:
+            pass
         time.sleep(2.0)
+
+    @staticmethod
+    def _num(pattern: str, text: str) -> float | None:
+        match = re.search(pattern, text, re.I | re.S)
+        return float(match.group(1)) if match else None
+
+    @staticmethod
+    def _clean(text: str) -> str:
+        return re.sub(r"\s+", " ", text).strip()
 
     def parse_feedback(self) -> PigaiFeedback:
         html = self.driver.page_source
-        text = BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
-        score = self._parse_score(text)
-        rank, total_students = self._parse_rank(text)
-        highest_score, lowest_score = self._parse_extremes(text)
-        dimensions = self._parse_dimensions(text)
-        reviews = self._parse_sentence_reviews(text)
-        suggestions = [review.comment for review in reviews if review.category in {"推荐表达", "拓展辨析", "近义词表达学习"}]
-        word_count = self._parse_word_count(text)
-        submission_count = self._parse_submission_count(text)
-        return PigaiFeedback(
-            score=score,
-            rank=rank,
-            total_students=total_students,
-            highest_score=highest_score,
-            lowest_score=lowest_score,
-            dimensions=dimensions,
-            overall_comment=self._parse_overall_comment(text),
-            word_count=word_count,
-            submission_count=submission_count,
-            sentence_reviews=reviews,
-            highlights=[],
-            suggestions=suggestions,
-            page_url=self.driver.current_url,
-            raw_text=text,
+        soup = BeautifulSoup(html, "html.parser")
+        text = soup.get_text("\n", strip=True)
+        flat = self._clean(text)
+        feedback = PigaiFeedback(page_url=self.driver.current_url, raw_text=text)
+
+        score_patterns = [
+            r"作文评分\s*[:：]?\s*([0-9]+(?:\.[0-9]+)?)",
+            r"(?:本次)?得分(?:为|[:：])?\s*([0-9]+(?:\.[0-9]+)?)",
+            r"score\s*[:：]?\s*([0-9]+(?:\.[0-9]+)?)",
+        ]
+        for pattern in score_patterns:
+            feedback.score = self._num(pattern, flat)
+            if feedback.score is not None:
+                break
+
+        if feedback.score is None:
+            selectors = [
+                "#score", ".score", "#score_num", ".score_num", "#scoreNum", ".scoreNum",
+                "[id*='score']", "[class*='score']", "[id*='fen']", "[class*='fen']",
+            ]
+            candidates: list[float] = []
+            seen_nodes: set[int] = set()
+            for selector in selectors:
+                for node in soup.select(selector):
+                    node_id = id(node)
+                    if node_id in seen_nodes:
+                        continue
+                    seen_nodes.add(node_id)
+                    chunk = self._clean(node.get_text(" ", strip=True))
+                    if not chunk or len(chunk) > 40:
+                        continue
+                    for m in re.finditer(r"(?<!\d)(100|[0-9]{1,2})(?:\.([0-9]+))?(?!\d)", chunk):
+                        value = float(m.group(0))
+                        if 0 <= value <= 100:
+                            candidates.append(value)
+            if candidates:
+                feedback.score = candidates[0]
+
+        rank_match = re.search(
+            r"排名\s*[:：]?\s*第?\s*(\d+)\s*[（(]\s*共\s*(\d+)\s*[）)]",
+            flat,
         )
+        if rank_match:
+            feedback.rank = int(rank_match.group(1))
+            feedback.total_students = int(rank_match.group(2))
+        feedback.highest_score = self._num(r"最高分\s*[:：]?\s*([0-9]+(?:\.[0-9]+)?)", flat)
+        feedback.lowest_score = self._num(r"最低分\s*[:：]?\s*([0-9]+(?:\.[0-9]+)?)", flat)
 
-    @staticmethod
-    def _parse_score(text: str) -> float:
-        patterns = [
-            r"(?:得分|总分|评分)\s*[:：]?\s*(\d+(?:\.\d+)?)",
-            r"\b(\d+(?:\.\d+)?)\s*分\b",
+        word_matches = re.findall(r"字数\s*[:：]?\s*(\d+)\s*(?:词|字)(?!\s*[~～-])", flat)
+        if word_matches:
+            feedback.word_count = int(word_matches[-1])
+        submission_matches = re.findall(r"提交次数\s*[:：]?\s*(\d+)", flat)
+        if submission_matches:
+            feedback.submission_count = int(submission_matches[-1])
+
+        comment_patterns = [
+            r"评语\s*[:：]\s*(.+?)(?=按句点评|第\s*1\s*段|推荐|要求|范文|$)",
+            r"评语\s+(.+?)(?=按句点评|第\s*1\s*段|推荐|要求|范文|$)",
         ]
-        candidates: list[float] = []
-        for pattern in patterns:
-            for match in re.finditer(pattern, text):
-                value = float(match.group(1))
-                if 0 <= value <= 100:
-                    candidates.append(value)
-        if not candidates:
-            raise ValueError("Unable to parse Pigai score from result page.")
-        return max(candidates)
+        for pattern in comment_patterns:
+            m = re.search(pattern, flat, re.S)
+            if m:
+                feedback.overall_comment = self._clean(m.group(1))
+                break
 
-    @staticmethod
-    def _parse_rank(text: str) -> tuple[int | None, int | None]:
-        patterns = [
-            r"排名\s*[:：]?\s*(\d+)\s*/\s*(\d+)",
-            r"第\s*(\d+)\s*名.*?(?:共|/|总)\s*(\d+)",
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, text, flags=re.S)
-            if match:
-                return int(match.group(1)), int(match.group(2))
-        return None, None
+        for label, key in [("词汇", "vocabulary"), ("句子", "sentence"), ("篇章结构", "structure"), ("内容相关", "relevance")]:
+            value = self._num(rf"{label}\s*[:：]?\s*([0-9]+(?:\.[0-9]+)?)", flat)
+            feedback.dimensions[key] = value
 
-    @staticmethod
-    def _parse_extremes(text: str) -> tuple[float | None, float | None]:
-        high = re.search(r"(?:最高|最高分)\s*[:：]?\s*(\d+(?:\.\d+)?)", text)
-        low = re.search(r"(?:最低|最低分)\s*[:：]?\s*(\d+(?:\.\d+)?)", text)
-        return (float(high.group(1)) if high else None, float(low.group(1)) if low else None)
+        review_nodes = soup.select(
+            "[class*='comment'], [class*='review'], [class*='sentence'], [class*='point'], "
+            "[class*='suggest'], [class*='error'], [class*='wrong'], [class*='tip']"
+        )
+        seen: set[str] = set()
+        markers = ["错误", "警示", "提示", "推荐表达", "推荐", "搭配", "近义词", "闪光", "拓展解析", "学习提示"]
+        for node in review_nodes:
+            chunk = self._clean(node.get_text(" ", strip=True))
+            if len(chunk) < 8 or len(chunk) > 1200 or chunk in seen:
+                continue
+            if any(mark in chunk for mark in markers):
+                seen.add(chunk)
+                if "错误" in chunk:
+                    level = "error"
+                elif "警示" in chunk or "疑似" in chunk:
+                    level = "warning"
+                else:
+                    level = "info"
+                feedback.sentence_reviews.append(SentenceReview(comment=chunk, level=level))
+                if "闪光" in chunk:
+                    feedback.highlights.append(chunk)
+                if "推荐" in chunk or "近义" in chunk or "拓展" in chunk:
+                    feedback.suggestions.append(chunk)
 
-    @staticmethod
-    def _parse_dimensions(text: str) -> dict[str, float | None]:
-        labels = {
-            "vocabulary": ["词汇"],
-            "sentence": ["句子", "句法"],
-            "structure": ["篇章结构", "结构"],
-            "relevance": ["内容相关", "相关度", "切题"],
-        }
-        result: dict[str, float | None] = {key: None for key in labels}
-        for key, variants in labels.items():
-            for label in variants:
-                match = re.search(rf"{label}\s*[:：]?\s*(\d+(?:\.\d+)?)", text)
-                if match:
-                    result[key] = float(match.group(1))
-                    break
-        return result
+        if not feedback.sentence_reviews and "按句点评" in flat:
+            tail = flat.split("按句点评", 1)[-1]
+            chunks = re.split(r"(?=\b\d+\.\d+\b)", tail)
+            for chunk in chunks:
+                chunk = self._clean(chunk)
+                if any(mark in chunk for mark in markers) and 8 <= len(chunk) <= 1200:
+                    feedback.sentence_reviews.append(SentenceReview(comment=chunk, level="info"))
 
-    @staticmethod
-    def _parse_overall_comment(text: str) -> str:
-        marker = "类型\n维度\n测量值\n参考范围"
-        if marker in text:
-            return text.split(marker, 1)[0][-1200:]
-        return text[:1200]
+        return feedback
 
-    @staticmethod
-    def _parse_word_count(text: str) -> int | None:
-        match = re.search(r"字数\s*[:：]?\s*(\d+)", text)
-        return int(match.group(1)) if match else None
-
-    @staticmethod
-    def _parse_submission_count(text: str) -> int | None:
-        for pattern in [r"提交次数\s*[:：]?\s*(\d+)", r"提交\s*(\d+)\s*次"]:
-            match = re.search(pattern, text)
-            if match:
-                return int(match.group(1))
-        return None
-
-    @staticmethod
-    def _parse_sentence_reviews(text: str) -> list[SentenceReview]:
-        categories = ["拓展辨析", "学习提示", "推荐表达", "近义词表达学习", "语法", "搭配"]
-        reviews: list[SentenceReview] = []
-        for category in categories:
-            for match in re.finditer(rf"\[{category}\](.+?)(?=\[(?:{'|'.join(categories)})\]|$)", text, flags=re.S):
-                comment = match.group(1).strip()
-                if not comment:
-                    continue
-                reviews.append(
-                    SentenceReview(
-                        sentence="",
-                        category=category,
-                        level="info",
-                        target="",
-                        comment=comment,
-                    )
-                )
-        return reviews
+    def screenshot(self, path: str | Path) -> None:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        self.driver.save_screenshot(str(path))
