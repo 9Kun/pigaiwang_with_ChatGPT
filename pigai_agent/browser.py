@@ -27,6 +27,9 @@ class PigaiClient:
         options.add_argument("--window-size=1440,1200")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
+        chrome_binary = Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+        if chrome_binary.exists():
+            options.binary_location = str(chrome_binary)
         self.driver = webdriver.Chrome(options=options)
         self.wait = WebDriverWait(self.driver, 15)
         self.account = account
