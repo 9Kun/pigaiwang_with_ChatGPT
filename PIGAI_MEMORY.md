@@ -1,38 +1,39 @@
 # Pigai High-Score Memory
 
-> Persistent experiment memory for `essay.txt`. Read this file before editing. Trust real Pigai A/B results over intuition. Preserve the best verified checkpoint, change one primary linguistic variable per round, and never promote a lower-scoring variant merely because one diagnostic dimension improved.
+> Persistent experiment memory for `essay.txt`. The optimization target has been reached. Do not modify or resubmit the final essay unless the user explicitly asks to continue beyond 95.
 
-## Current objective
+## Final verified result — Run 140
 
-- Target: **verified Pigai score >= 95.0**.
-- Do not claim success until a real submission reports `score >= 95.0`.
-- Current best verified headline score: **94.5**, rank 1.
-- Best role/topic: **grandmother**, with direct personal interaction and long-term influence.
+- **Target reached: Pigai score 95.0**.
+- Essay commit: `f4eb2ba2809d9c637ba06fdae58062bff6646a82`.
+- Pigai word count: **178**.
+- Rank: **1/65**.
+- Dimensions: vocabulary **97.3346**, sentence **93.4484**, structure **91.5539**, relevance **95.4546**.
+- Pigai overall feedback specifically praised the cohesion: `恰当的使用了过渡词和衔接词，衔接手法做的很棒。`
+- Stop condition is satisfied. Preserve this exact essay as the final checkpoint.
 
-## Strongest balanced checkpoint — Run 132
-
-Essay commit: `5ca3412f5e4057ddcb45e520ac2d67a74e084437`.
-Pigai score: **94.5**; Pigai word count: **178**; rank **1/65**.
-Hidden dimensions: vocabulary **97.3197**, sentence **93.4484**, structure **91.0732**, relevance **95.7044**.
-This is the strongest balanced checkpoint so far: compared with Run 128, it keeps the same 94.5 headline score while improving vocabulary, sentence, structure, and especially relevance.
-
-### Run 132 text
+### Final 95.0 essay
 
 ```text
 The person I hold in the highest regard is my grandmother. Her character, marked by patience, perseverance and responsibility, has left an indelible impression on me. Above all, I admire the patience and responsibility she displays in supporting our family whenever difficulties arise.
 
 To illustrate this, I vividly remember receiving a disappointing grade at school and wanting to give up. Instead of criticizing me, she spared no effort to encourage me and helped restore my confidence. She taught me to view difficulties as stepping stones to progress. More significantly, I learned from her that perseverance matters most when life becomes difficult, and that strength is shown through patience and responsibility.
 
-That lesson, rooted in her perseverance and responsibility, has deeply influenced how I address difficulties. Whenever I encounter setbacks, I follow her example, maintain my composure and face challenges with patience and perseverance. Therefore, I have grown stronger, more responsible and considerate. For these reasons, she is not only the person I respect most, but also someone I will look up to and a constant source of strength.
+That lesson, rooted in her perseverance and responsibility, has deeply influenced how I address difficulties. Whenever I encounter setbacks, I follow her example, maintain my composure and face challenges with patience and perseverance. Therefore, I have become more resilient, responsible and considerate. For these reasons, she is not only the person I respect most, but also someone I will look up to and a constant source of strength.
 ```
 
-## Earlier 94.5 checkpoints
+## Why Run 140 broke the 94.5 plateau
 
-- **Run 128 / `efe073e1b5bc6ffb64db78d55896fb4a1181d0e1`**: first verified 94.5, 180 words. Dimensions: vocabulary **97.1568**, sentence **93.3505**, structure **91.0002**, relevance **91.1311**. Key gain came from `receiving a disappointing grade at school and wanting to give up`.
-- **Run 131 / `a27dbc997a3d8bcfe2bac725112dbdafba31023f`**: first-paragraph naturalization `she displays in supporting...`; **94.5**. Dimensions: vocabulary **97.3361**, sentence **93.3505**, structure **91.0339**, relevance **91.0981**.
-- **Run 132**: changed the third-paragraph bridge to `That lesson, rooted in her perseverance and responsibility, has deeply influenced how I address difficulties.`; **94.5**, relevance jumped to **95.7044**. Promote as strongest balanced checkpoint.
+Run 132 was the strongest balanced 94.5 checkpoint: vocabulary **97.3197**, sentence **93.4484**, structure **91.0732**, relevance **95.7044**. Run 140 changed only:
 
-## Preserve by default
+- `Therefore, I have grown stronger, more responsible and considerate.`
+- to `Therefore, I have become more resilient, responsible and considerate.`
+
+The headline score rose **94.5 -> 95.0**. Most notably, structure rose **91.0732 -> 91.5539** while vocabulary and sentence remained strong and relevance stayed above 95.
+
+## Critical validated components
+
+Preserve by default:
 
 - `hold ... in the highest regard`
 - `leave an indelible impression on ...`
@@ -47,48 +48,40 @@ That lesson, rooted in her perseverance and responsibility, has deeply influence
 - `To illustrate this,`
 - `More significantly,`
 - `Therefore,`
-- evidence wording `receiving a disappointing grade at school and wanting to give up`
-- Run-132 bridge `That lesson, rooted in her perseverance and responsibility, has deeply influenced how I address difficulties.`
-- semantic chain: **patience -> perseverance -> responsibility -> changed behavior / stronger self**.
+- `receiving a disappointing grade at school and wanting to give up`
+- `That lesson, rooted in her perseverance and responsibility, has deeply influenced how I address difficulties.`
+- `Therefore, I have become more resilient, responsible and considerate.`
+- semantic chain: **patience -> perseverance -> responsibility -> concrete influence -> resilient/responsible/considerate behavior**.
 
-## Important recent experiments
+## Recent experiment log
 
-- Run 119: third-paragraph `patience and responsibility` instead of `patience and perseverance`; **92.5**. Relevance collapsed to **72.2948**. Reject.
-- Run 121: `Beyond this experience` instead of `Beyond that experience`; **94.0**, neutral. No gain.
-- Run 122: conclusion `Taken together, these qualities ...`; **94.0**. Structure fell. Reject.
-- Run 123: four-paragraph layout; **94.0**. Structure fell. Keep 3 paragraphs.
-- Run 124: split concrete exam evidence into two short sentences; **93.0**. Structure rose to **91.1025**, but sentence fell to **89.3552**. Reject short-sentence optimization.
-- Run 125: `a disappointing exam result that nearly made me give up`; **94.0**. Structure **90.7620**, relevance **91.0152**. Reject.
-- Run 126: `a disappointing exam result that nearly made me lose confidence`; **94.0**. Relevance **90.2150**. Reject.
-- Run 127: `Her example has made me resilient, responsible and considerate.`; **94.0**. Structure/relevance both fell. Reject.
-- Run 129: `a disappointing grade at school that almost made me give up`; **94.0**. Reject.
-- Run 130: `has exerted a profound influence on me far beyond that experience`; **93.5**. Vocabulary rose but sentence/relevance fell sharply. Reject advanced phrase stacking.
-- Run 131: `she displays in supporting...`; **94.5**, equal checkpoint.
-- **Run 132**: lesson-linked influence bridge; **94.5**, relevance **95.7044**. Promote.
+- Run 128: first **94.5**, 180 words; concrete `receiving a disappointing grade...` evidence was the key gain.
+- Run 131: `she displays in supporting...`; **94.5**, essentially neutral but natural.
+- Run 132: lesson-linked influence bridge; **94.5**, relevance jumped to **95.7044**. Became the strongest balanced pre-95 checkpoint.
+- Run 133: `Ultimately` conclusion; **94.5**, sentence/structure fell. Reject.
+- Run 134: `I admire how she supports...`; **94.5**, relevance slightly higher but structure lower. Reject.
+- Run 135: `I follow her example by maintaining...`; **94.5**, sentence/structure fell. Reject.
+- Run 136: `Guided by her example...`; **94.0**, relevance collapsed to **89.1669**. Reject.
+- Run 137: `patience and responsibility are essential to true strength`; **94.5**, structure rose to **91.1398**, but Pigai falsely flagged `are` for subject-verb agreement. Reject as final wording.
+- Run 138: `true strength requires both patience and responsibility`; **94.5**, no grammar error, sentence **93.4843**, but structure only **90.7584**.
+- Run 139: `both patience and responsibility contribute to true strength`; **94.5**, sentence reached **93.5315**, but structure **90.7043**. Reject versus Run 132.
+- **Run 140**: restored Run 132 and changed only `grown stronger` -> `become more resilient`; **95.0**. Final winner.
 
-## Diagnostic priority
+## Major traps learned earlier
 
-On Run 132:
-1. vocabulary **97.32** — excellent; do not chase rare vocabulary.
-2. relevance **95.70** — now excellent; preserve this bridge and semantic chain.
-3. sentence **93.45** — strong; small naturalness gains may matter.
-4. structure **91.07** — weakest remaining dimension; target genuine cohesion, especially avoiding redundant transitions.
-
-Do not optimize reference ranges mechanically. Forced short sentences, adjective-ratio changes, advanced phrase stacking, and explicit keyword repetition have all lowered headline score in prior tests.
+- Replacing third-paragraph `patience and perseverance` with `patience and responsibility` collapsed relevance dramatically.
+- Four paragraphs did not beat the three-paragraph structure.
+- Forced short sentences lowered sentence quality.
+- Advanced phrase stacking such as `exerted a profound influence ... far beyond` raised vocabulary but lowered the total score.
+- `Guided by her example` and similar rewrites weakened relevance despite sounding polished.
+- Do not chase diagnostic reference ranges, rare vocabulary, or parser-sensitive grammar mechanically.
 
 ## Infrastructure
 
-- `.github/workflows/pigai-run.yml` triggers grading only when `essay.txt` changes (or manual dispatch).
-- Successful grading creates artifacts containing `latest_feedback.json`, `latest_result.html`, `latest_result.png`, and `latest_essay.txt`.
-- `LATEST_PIGAI_FEEDBACK.json` is convenient but not authoritative if post-grading persistence fails; inspect the artifact in that case.
-- Documentation-only changes do not trigger a Pigai submission.
-
-## Iteration rule
-
-Start each new experiment from Run 132 unless a newer variant scores above **94.5**, or ties **94.5** with a clearly stronger balanced hidden profile. Preserve the Run-132 lesson bridge by default.
-
-Only one primary linguistic variable per submission. If a variant scores below the active checkpoint, revert before the next experiment.
+- `.github/workflows/pigai-run.yml` grades when `essay.txt` changes or on manual dispatch.
+- `LATEST_PIGAI_FEEDBACK.json` stores the latest parsed result; artifacts contain `latest_feedback.json`, result HTML/screenshot, and essay text.
+- Documentation-only changes do not trigger another Pigai submission.
 
 ## Stop condition
 
-**Stop only after a real Pigai result reports score >= 95.0.**
+**ACHIEVED: verified Pigai score = 95.0 on Run 140. Stop further automatic essay experiments unless the user explicitly requests a higher target.**
