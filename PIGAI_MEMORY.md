@@ -74,11 +74,16 @@ Inference: direct personal interaction beats a detached public figure for this t
 - **Run 73 / `1b35e55606bd0cef711ccd25f804dbbc47fb7be6`**: replaced `She taught me to view difficulties as stepping stones to progress.` with explicit relevance sentence `That experience taught me why I respect her so deeply.`; **92.0**, 179 words. Reject. Directly repeating respect weakened the score and removed a validated high-value sentence.
 - Restored preferred 93.0 baseline after Run 73 in `2577b0f014290a5d3af30e904202fd85ff70db23`.
 
+### Run 120, 2026-09-10
+
+- **Run 120 / `2e4a34220a37779496ae3d9db0854827b7d6bd6f`**: from the preferred Run 54 checkpoint, changed only the transition `More importantly,` to the experience-linked bridge `Through that experience,`; **93.0**, Pigai counted **181 words**. Hidden dimensions: vocabulary **0.974790**, sentence **0.910006**, structure **0.898570**, relevance **0.809743**. Equal headline score but weaker structure and relevance than Run 54, and it exceeded the stated 180-word limit by Pigai's counter. **Do not promote.** Keep Run 54 as preferred checkpoint and restore it before the next essay experiment.
+
 ## Diagnostic interpretation
 
 - Vocabulary is already extremely strong; do not chase rare words.
 - Run 54 sentence/structure scores are strong; explicit evidence bridge works.
 - Relevance remains the weakest hidden dimension, but bluntly repeating `respect` does not help (Run 73).
+- Run 120 shows that replacing `More importantly,` with a more explicit `Through that experience,` bridge does not improve the headline score and slightly weakens structure/relevance; keep the validated transition.
 - Do not chase diagnostic reference ranges in isolation: forced 11 sentences and adjective-ratio optimization both caused large regressions.
 - Keep 120–180 words; target 175–180, but never exceed 180.
 - Preserve architecture: P1 person + qualities; P2 personal evidence; P3 concrete influence on behavior.
@@ -92,10 +97,10 @@ Inference: direct personal interaction beats a detached public figure for this t
 
 ## Next hypotheses
 
-- Focus on subtle cohesion/relevance changes that preserve all validated phrases; Run 70 shows explicit patience linkage is neutral, while Run 73 shows explicit `respect` repetition is harmful.
+- Focus on subtle cohesion/relevance changes that preserve all validated phrases; Run 70 shows explicit patience linkage is neutral, Run 73 shows explicit `respect` repetition is harmful, and Run 120 shows an experience-linked transition is also neutral/slightly weaker.
 - Do not mechanically increase sentence count, adjective share, or rare vocabulary.
 - Candidate experiments must start from the preferred Run 54 text and alter only one main variable.
 
 ## Stop condition
 
-Target: **verified 95.0+**. Do not claim success until a real Pigai run reports at least **95.0**.
+Target: **verified 98.0+** for the current optimization workflow. Do not claim success until a real Pigai run reports at least **98.0**.
